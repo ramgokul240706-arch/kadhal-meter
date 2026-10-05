@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hearts Entwined — Romantic Quiz</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            rose: { 950: "#4a0519" },
+            champagne: "#fff1f2"
+          },
+          fontFamily: {
+            display: ['"Playfair Display"', "Georgia", "serif"],
+            sans: ['"Nunito"', "system-ui", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --blush: #ff6b9d;
+      --wine: #8b1e4a;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      background: radial-gradient(1200px 800px at 10% 0%, #7a1848 0%, transparent 50%),
+                  radial-gradient(900px 700px at 100% 100%, #5a1238 0%, transparent 45%),
+                  linear-gradient(160deg, #3a0c24 0%, #6b1640 40%, #2a0918 100%);
+      color: #fff7fb;
+    }
+    .view { display: none; animation: fadeRise 0.7s ease both; }
+    .view.active { display: block; }
+    @keyframes fadeRise {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .heart-field {
+      position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0;
+    }
+    .float-heart {
+      position: absolute; bottom: -40px; color: #ff8fb8; opacity: 0.35;
+      animation: floatUp linear infinite;
+      filter: drop-shadow(0 0 8px #ff4d88);
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(0) rotate(0) scale(0.6); opacity: 0; }
+      12% { opacity: 0.5; }
+      100% { transform: translateY(-110vh) rotate(280deg) scale(1.15); opacity: 0; }
+    }
+    .glass {
+      background: linear-gradient(180deg, rgba(255,240,246,0.22), rgba(90,20,45,0.55));
+      border: 1px solid rgba(255,182,193,0.45);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.28);
+    }
+    h1, h2, h3 { text-shadow: 0 6px 28px rgba(255, 90, 140, 0.45); }
+    .btn-primary {
+      background: linear-gradient(135deg, #ff4d88, #c81e5a);
+      box-shadow: 0 10px 30px rgba(200, 30, 90, 0.45);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-primary:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 14px 36px rgba(200, 30, 90, 0.6); }
+    .btn-primary:active { transform: translateY(0) scale(0.98); }
+    .stage {
+      position: relative;
+      min-height: 280px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: clamp(12px, 8vw, 90px);
+      padding: 20px 8px 8px;
+    }
+    .char {
+      position: relative;
+      width: 118px;
+      height: 210px;
+      transform-origin: 50% 100%;
+    }
+    .char.left { animation: idleL 2.4s ease-in-out infinite; }
+    .char.right { animation: idleR 2.6s ease-in-out infinite; }
+    @keyframes idleL {
+      0%, 100% { transform: translateY(0) rotate(-1deg); }
+      50% { transform: translateY(-7px) rotate(1.5deg); }
+    }
+    @keyframes idleR {
+      0%, 100% { transform: translateY(0) rotate(1deg); }
+      50% { transform: translateY(-8px) rotate(-1.5deg); }
+    }
+    .head {
+      width: 78px; height: 78px; border-radius: 50%;
+      margin: 0 auto; position: relative; z-index: 2;
+    }
+    .char.left .head { background: linear-gradient(#ffd8b5, #f4b184); }
+    .char.right .head { background: linear-gradient(#ffe0c2, #f0b48a); }
+    .hair {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      z-index: 3; pointer-events: none;
+    }
+    .char.left .hair {
+      top: -14px; width: 86px; height: 52px;
+      background: #2b1810; border-radius: 40px 40px 8px 8px;
+    }
+    .char.right .hair {
+      top: -18px; width: 96px; height: 78px;
+      background: #4a1d33; border-radius: 48px 48px 20px 20px;
+    }
+    .char.right .hair::after {
+      content: ""; position: absolute; left: -6px; right: -6px; top: 36px; height: 54px;
+      background: #4a1d33; border-radius: 0 0 40px 40px;
+    }
+    .eye {
+      position: absolute; top: 34px; width: 10px; height: 12px; background: #2a1520;
+      border-radius: 50%; animation: blink 4.6s infinite;
+    }
+    .eye.l { left: 22px; }
+    .eye.r { right: 22px; }
+    @keyframes blink {
+      0%, 92%, 100% { transform: scaleY(1); }
+      95% { transform: scaleY(0.1); }
+    }
+    .blush {
+      position: absolute; top: 46px; width: 14px; height: 8px; background: #ff8aa8; border-radius: 50%; opacity: 0.7;
+    }
+    .blush.l { left: 10px; }
+    .blush.r { right: 10px; }
+    .mouth {
+      position: absolute; left: 50%; bottom: 16px; width: 16px; height: 8px;
+      border: 2px solid #c45b6a; border-top: 0; border-radius: 0 0 12px 12px;
+      transform: translateX(-50%);
+    }
+    .body {
+      width: 70px; height: 88px; margin: -8px auto 0; border-radius: 28px 28px 18px 18px; position: relative; z-index: 1;
+    }
+    .char.left .body { background: linear-gradient(#3b82f6, #1d4ed8); }
+    .char.right .body { background: linear-gradient(#fb7185, #e11d48); }
+    .arm {
+      position: absolute; top: 10px; width: 16px; height: 52px; border-radius: 12px;
+      transform-origin: 50% 8px; z-index: 0;
+    }
+    .char.left .arm { background: #f4b184; }
+    .char.right .arm { background: #f0b48a; }
+    .arm.la { left: -10px; transform: rotate(12deg); }
+    .arm.ra { right: -10px; transform: rotate(-12deg); }
+    .legs {
+      display: flex; justify-content: center; gap: 10px; margin-top: -4px;
+    }
+    .leg { width: 16px; height: 42px; border-radius: 8px; background: #1e293b; }
+    .bubble {
+      position: absolute; top: 8px; max-width: min(260px, 42vw);
+      padding: 12px 14px; border-radius: 18px;
+      background: rgba(255,255,255,0.95); color: #4a1230;
+      font-size: 14px; line-height: 1.35; font-weight: 700;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+      opacity: 0; transform: translateY(8px) scale(0.92);
+      pointer-events: none;
+    }
+    .bubble.show { animation: popIn 0.45s ease forwards; }
+    .bubble.left-b { left: 4%; }
+    .bubble.right-b { right: 4%; }
+    .bubble::after {
+      content: ""; position: absolute; bottom: -8px; width: 14px; height: 14px;
+      background: inherit; transform: rotate(45deg);
+    }
+    .bubble.left-b::after { left: 22px; }
+    .bubble.right-b::after { right: 22px; }
+    @keyframes popIn {
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    /* Outcome animations */
+    .scene-talk .char.left .mouth, .scene-talk .char.right .mouth {
+      animation: talk 0.35s infinite alternate;
+    }
+    @keyframes talk {
+      from { height: 6px; }
+      to { height: 11px; }
+    }
+    .scene-slap .char.left { animation: none; }
+    .scene-slap .char.left .arm.ra {
+      animation: slapArm 0.7s ease-in forwards;
+      z-index: 5;
+    }
+    @keyframes slapArm {
+      0% { transform: rotate(-20deg); }
+      55% { transform: rotate(95deg); }
+      100% { transform: rotate(70deg); }
+    }
+    .scene-slap .char.right {
+      animation: slapped 0.85s ease forwards;
+    }
+    @keyframes slapped {
+      0% { transform: translateX(0) rotate(0); }
+      30% { transform: translateX(18px) rotate(12deg); }
+      100% { transform: translateX(28px) rotate(8deg); }
+    }
+    .scene-breakup .char.left { animation: walkLeft 1.8s ease forwards; }
+    .scene-breakup .char.right { animation: walkRight 1.8s ease forwards; }
+    @keyframes walkLeft {
+      to { transform: translateX(-140px); opacity: 0.15; }
+    }
+    @keyframes walkRight {
+      to { transform: translateX(140px); opacity: 0.15; }
+    }
+    .scene-hug .char.left { animation: hugL 1s ease forwards; }
+    .scene-hug .char.right { animation: hugR 1s ease forwards; }
+    @keyframes hugL { to { transform: translateX(38px) rotate(6deg); } }
+    @keyframes hugR { to { transform: translateX(-38px) rotate(-6deg); } }
+    .scene-hug .arm.ra, .scene-hug .arm.la { z-index: 4; }
+    .scene-hug .char.left .arm.ra { transform: rotate(70deg); }
+    .scene-hug .char.right .arm.la { transform: rotate(-70deg); }
+    .scene-kiss .char.left { animation: kissL 1.1s ease forwards; }
+    .scene-kiss .char.right { animation: kissR 1.1s ease forwards; }
+    @keyframes kissL { to { transform: translateX(46px) rotate(8deg); } }
+    @keyframes kissR { to { transform: translateX(-46px) rotate(-8deg); } }
+    .kiss-burst {
+      position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%);
+      font-size: 42px; opacity: 0; pointer-events: none;
+    }
+    .scene-kiss .kiss-burst { animation: kissPop 1.4s 0.7s ease forwards; }
+    @keyframes kissPop {
+      0% { opacity: 0; transform: translate(-50%, -40%) scale(0.4); }
+      45% { opacity: 1; transform: translate(-50%, -55%) scale(1.25); }
+      100% { opacity: 1; transform: translate(-50%, -62%) scale(1.15); }
+    }
+    .option {
+      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+    .option:hover { transform: translateY(-2px); }
+    .progress-bar {
+      height: 8px; border-radius: 99px; background: rgba(255,255,255,0.12); overflow: hidden;
+    }
+    .progress-bar > span {
+      display: block; height: 100%; width: 0;
+      background: linear-gradient(90deg, #fb7185, #f43f5e);
+      transition: width 0.4s ease;
+    }
+    .badge-chip {
+      display: inline-block; padding: 6px 14px; border-radius: 999px;
+      background: rgba(255,255,255,0.12); letter-spacing: 0.12em; text-transform: uppercase;
+      font-size: 11px; font-weight: 800;
+    }
+    input, textarea, select {
+      color: #3b1024 !important;
+    }
+    .builder-card { animation: fadeRise 0.4s ease both; }
+    @media (max-width: 640px) {
+      .char { width: 96px; height: 186px; }
+      .head { width: 64px; height: 64px; }
+      .body { width: 58px; height: 74px; }
+      .bubble { font-size: 13px; max-width: 46vw; }
+    }
+  </style>
+</head>
+<body>
+  <div class="heart-field" id="hearts" aria-hidden="true"></div>
+
+  <main class="relative z-10 mx-auto min-h-screen max-w-3xl px-4 py-8 sm:py-12">
+    <!-- WELCOME -->
+    <section id="view-welcome" class="view active">
+      <div class="mx-auto max-w-md text-center">
+        <p class="badge-chip mb-4 text-rose-100">Hearts Entwined</p>
+        <h1 class="font-display text-4xl sm:text-5xl leading-tight">Are you truly in love?</h1>
+        <p class="mt-3 text-rose-100/80">A romantic quiz for two hearts. Enter your names and begin.</p>
+        <div class="glass mt-8 rounded-3xl p-6 text-left">
+          <label class="mb-1 block text-sm font-semibold text-rose-100">Your Name</label>
+          <input id="yourName" class="mb-4 w-full rounded-2xl border-0 bg-white/90 px-4 py-3 outline-none ring-2 ring-transparent focus:ring-rose-300" placeholder="e.g. Alex" />
+          <label class="mb-1 block text-sm font-semibold text-rose-100">Partner's Name</label>
+          <input id="partnerName" class="mb-6 w-full rounded-2xl border-0 bg-white/90 px-4 py-3 outline-none ring-2 ring-transparent focus:ring-rose-300" placeholder="e.g. Jordan" />
+          <button id="startBtn" class="btn-primary w-full rounded-2xl py-3.5 text-lg font-extrabold tracking-wide">Enter / Start Game</button>
+          <p id="welcomeError" class="mt-3 hidden text-center text-sm text-rose-200">Please enter both names to begin.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONVERSATION -->
+    <section id="view-talk" class="view">
+      <div class="mx-auto max-w-2xl text-center">
+        <h2 class="font-display text-3xl">A quiet question between lovers</h2>
+        <p class="mt-2 text-rose-100/75">Listen closely…</p>
+        <div id="talkStage" class="glass relative mt-6 overflow-hidden rounded-3xl pb-4 scene-talk">
+          <div class="bubble left-b" id="bubbleL"></div>
+          <div class="bubble right-b" id="bubbleR"></div>
+          <div class="stage" id="talkChars"></div>
+        </div>
+        <button id="nextTalkBtn" class="btn-primary mt-6 hidden rounded-2xl px-8 py-3 font-extrabold">Next</button>
+      </div>
+    </section>
+
+    <!-- QUIZ -->
+    <section id="view-quiz" class="view">
+      <div class="mx-auto max-w-xl">
+        <div class="mb-4 flex items-center justify-between text-sm text-rose-100/80">
+          <span id="quizProgressLabel">Question 1</span>
+          <span id="quizScoreLabel">0 pts</span>
+        </div>
+        <div class="progress-bar mb-6"><span id="quizProgressBar"></span></div>
+        <div class="glass rounded-3xl p-6 sm:p-8">
+          <p class="text-xs uppercase tracking-[0.2em] text-rose-200">Choose with your heart</p>
+          <h3 id="questionText" class="font-display mt-2 text-2xl sm:text-3xl leading-snug"></h3>
+          <div class="mt-6 grid gap-3">
+            <button class="option rounded-2xl bg-white/90 px-5 py-4 text-left font-bold text-rose-950" data-choice="0"></button>
+            <button class="option rounded-2xl bg-white/90 px-5 py-4 text-left font-bold text-rose-950" data-choice="1"></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="view-result" class="view">
+      <div class="mx-auto max-w-2xl text-center">
+        <p class="badge-chip" id="resultBadge">Beloved</p>
+        <h2 class="font-display mt-3 text-4xl" id="resultTitle">Your hearts have spoken</h2>
+        <p class="mt-2 text-lg text-rose-100/90" id="resultPercent"></p>
+        <div id="resultStage" class="glass relative mt-6 overflow-hidden rounded-3xl pb-4">
+          <div class="bubble left-b" id="resBubbleL"></div>
+          <div class="bubble right-b" id="resBubbleR"></div>
+          <div class="kiss-burst" id="kissBurst">💋</div>
+          <div class="stage" id="resultChars"></div>
+        </div>
+        <p class="mx-auto mt-5 max-w-md text-rose-50/90" id="resultStory"></p>
+        <div class="mt-8 flex flex-col items-center gap-3">
+          <button id="createBtn" class="btn-primary w-full max-w-md rounded-2xl py-4 text-lg font-extrabold">Create For Your Lover</button>
+          <button id="replayBtn" class="w-full max-w-md rounded-2xl border border-white/20 bg-white/5 py-3 font-bold">Play Again</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- BUILDER -->
+    <section id="view-builder" class="view">
+      <div class="mx-auto max-w-xl">
+        <h2 class="font-display text-center text-3xl">Create For Your Lover</h2>
+        <p class="mt-2 text-center text-rose-100/75">Write your own questions. Each correct answer awards 10 points.</p>
+        <div id="builderList" class="mt-6 space-y-4"></div>
+        <button id="addQBtn" class="mt-4 w-full rounded-2xl border border-dashed border-rose-200/40 py-3 font-bold text-rose-100">+ Add Question</button>
+        <button id="publishBtn" class="btn-primary mt-4 w-full rounded-2xl py-3.5 font-extrabold">Generate Shareable Quiz</button>
+        <div id="shareBox" class="glass mt-5 hidden rounded-3xl p-5">
+          <p class="text-sm font-semibold text-rose-100">Send this link to your partner</p>
+          <textarea id="shareUrl" readonly class="mt-2 h-24 w-full rounded-2xl bg-white/90 p-3 text-sm"></textarea>
+          <button id="copyLinkBtn" class="btn-primary mt-3 w-full rounded-2xl py-3 font-extrabold">Copy Link</button>
+          <p id="copyDone" class="mt-2 hidden text-center text-sm text-rose-100">Copied. Share it with love.</p>
+        </div>
+        <button id="backResultBtn" class="mt-4 w-full text-sm text-rose-200/80 underline">Back to results</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const BADGES = {
+      0: "Strangers",
+      10: "Crush",
+      20: "Spark",
+      30: "Flirt",
+      40: "Darling",
+      50: "Sweetheart",
+      60: "Beloved",
+      70: "Devoted",
+      80: "Soulmates",
+      90: "Forever",
+      100: "True Love"
+    };
+
+    const DEFAULT_QUESTIONS = [
+      { q: "When your partner is silent after a long day, you…", a: "Give space, then check in with warmth", b: "Assume the worst and start a fight", correct: 0 },
+      { q: "Love, to you, mostly means…", a: "Choosing them even on ordinary Tuesdays", b: "Keeping options open just in case", correct: 0 },
+      { q: "If they forget a small promise, you…", a: "Talk honestly, then forgive", b: "Weaponize it forever", correct: 0 },
+      { q: "A perfect evening together is…", a: "Presence — even if plans change", b: "Only if it looks good online", correct: 0 },
+      { q: "When jealousy appears, you…", a: "Name it and ask for reassurance", b: "Spy, test, and punish", correct: 0 },
+      { q: "In hard seasons, you would…", a: "Stay and rebuild together", b: "Leave at the first inconvenience", correct: 0 },
+      { q: "Their dreams matter…", a: "As much as your own", b: "Only when they are convenient", correct: 0 },
+      { q: "Apology, done right, is…", a: "Changed behavior plus tenderness", b: "A quick ‘sorry’ to end the talk", correct: 0 },
+      { q: "You show love most by…", a: "Listening without needing to win", b: "Keeping score of favors", correct: 0 },
+      { q: "Are you truly in love, or just passing time?", a: "Truly in love — I choose you", b: "Just passing time", correct: 0 }
+    ];
+
+    const state = {
+      you: "",
+      partner: "",
+      questions: DEFAULT_QUESTIONS,
+      index: 0,
+      score: 0,
+      custom: false,
+      customFrom: ""
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function showView(name) {
+      document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+      $("view-" + name).classList.add("active");
+    }
+
+    function spawnHearts() {
+      const field = $("hearts");
+      const glyphs = ["❤", "♡", "♥"];
+      for (let i = 0; i < 28; i++) {
+        const el = document.createElement("span");
+        el.className = "float-heart";
+        el.textContent = glyphs[i % glyphs.length];
+        el.style.left = Math.random() * 100 + "%";
+        el.style.fontSize = 12 + Math.random() * 22 + "px";
+        el.style.animationDuration = 8 + Math.random() * 12 + "s";
+        el.style.animationDelay = Math.random() * 10 + "s";
+        field.appendChild(el);
+      }
+    }
+
+    function characterHTML(side, label) {
+      return `
+        <div class="char ${side}" aria-label="${label}">
+          <div class="head">
+            <div class="hair"></div>
+            <div class="eye l"></div>
+            <div class="eye r"></div>
+            <div class="blush l"></div>
+            <div class="blush r"></div>
+            <div class="mouth"></div>
+          </div>
+          <div class="body">
+            <div class="arm la"></div>
+            <div class="arm ra"></div>
+          </div>
+          <div class="legs"><div class="leg"></div><div class="leg"></div></div>
+        </div>`;
+    }
+
+    function renderChars(containerId) {
+      $(containerId).innerHTML =
+        characterHTML("left", state.you) + characterHTML("right", state.partner);
+    }
+
+    function encodeQuiz(payload) {
+      return btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
+        .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    }
+
+    function decodeQuiz(str) {
+      const pad = str.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = pad + "=".repeat((4 - pad.length % 4) % 4);
+      return JSON.parse(decodeURIComponent(escape(atob(padded))));
+    }
+
+    function loadSharedQuiz() {
+      const hash = location.hash.replace(/^#/, "");
+      const params = new URLSearchParams(hash.includes("=") ? hash : "");
+      const raw = params.get("c") || (hash.startsWith("c=") ? hash.slice(2) : "");
+      if (!raw) return;
+      try {
+        const data = decodeQuiz(raw);
+        if (Array.isArray(data.questions) && data.questions.length) {
+          state.questions = data.questions.map((q) => ({
+            q: String(q.q || "").trim(),
+            a: String(q.a || "").trim(),
+            b: String(q.b || "").trim(),
+            correct: Number(q.correct) === 1 ? 1 : 0
+          })).filter((q) => q.q && q.a && q.b);
+          state.custom = true;
+          state.customFrom = data.from || "someone who loves you";
+          if (state.questions.length) {
+            document.querySelector("#view-welcome h1").textContent = "A quiz made for you";
+            document.querySelector("#view-welcome p.mt-3").textContent =
+              "Custom quiz from " + state.customFrom + ". Enter both names and begin.";
+          }
+        }
+      } catch (e) {
+        console.warn("Could not load shared quiz", e);
+      }
+    }
+
+    function startGame() {
+      const you = $("yourName").value.trim();
+      const partner = $("partnerName").value.trim();
+      if (!you || !partner) {
+        $("welcomeError").classList.remove("hidden");
+        return;
+      }
+      state.you = you;
+      state.partner = partner;
+      state.index = 0;
+      state.score = 0;
+      showView("talk");
+      playConversation();
+    }
+
+    function playConversation() {
+      renderChars("talkChars");
+      const stage = $("talkStage");
+      stage.className = "glass relative mt-6 overflow-hidden rounded-3xl pb-4 scene-talk";
+      $("bubbleL").classList.remove("show");
+      $("bubbleR").classList.remove("show");
+      $("nextTalkBtn").classList.add("hidden");
+
+      const lines = [
+        { who: "L", text: state.you + ": " + state.partner + ", can I ask you something real?" },
+        { who: "R", text: state.partner + ": Always. What is it?" },
+        { who: "L", text: "Are you truly in love with me or just passing time?" },
+        { who: "R", text: "…Let the quiz reveal our hearts." }
+      ];
+
+      let i = 0;
+      function nextLine() {
+        if (i >= lines.length) {
+          $("nextTalkBtn").classList.remove("hidden");
+          return;
+        }
+        const line = lines[i++];
+        const el = line.who === "L" ? $("bubbleL") : $("bubbleR");
+        const other = line.who === "L" ? $("bubbleR") : $("bubbleL");
+        other.classList.remove("show");
+        el.textContent = line.text;
+        el.classList.remove("show");
+        void el.offsetWidth;
+        el.classList.add("show");
+        setTimeout(nextLine, 2200);
+      }
+      setTimeout(nextLine, 400);
+    }
+
+    function startQuiz() {
+      showView("quiz");
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      const total = state.questions.length;
+      const q = state.questions[state.index];
+      $("quizProgressLabel").textContent = "Question " + (state.index + 1) + " of " + total;
+      $("quizScoreLabel").textContent = state.score + " pts";
+      $("quizProgressBar").style.width = (state.index / total * 100) + "%";
+      $("questionText").textContent = q.q;
+      const btns = document.querySelectorAll("#view-quiz .option");
+      btns[0].textContent = q.a;
+      btns[1].textContent = q.b;
+      btns.forEach((b) => { b.disabled = false; b.style.opacity = "1"; });
+    }
+
+    function choose(choice) {
+      const q = state.questions[state.index];
+      const btns = document.querySelectorAll("#view-quiz .option");
+      btns.forEach((b) => b.disabled = true);
+      if (Number(choice) === Number(q.correct)) state.score += 10;
+      $("quizScoreLabel").textContent = state.score + " pts";
+      setTimeout(() => {
+        state.index += 1;
+        if (state.index >= state.questions.length) finishQuiz();
+        else renderQuestion();
+      }, 280);
+    }
+
+    function percentFromScore() {
+      const max = state.questions.length * 10;
+      if (!max) return 0;
+      return Math.round((state.score / max) * 100);
+    }
+
+    function badgeFor(pct) {
+      const tier = Math.min(100, Math.max(0, Math.floor(pct / 10) * 10));
+      return BADGES[tier] || "Beloved";
+    }
+
+    function finishQuiz() {
+      const pct = percentFromScore();
+      const badge = badgeFor(pct);
+      $("resultBadge").textContent = badge;
+      $("resultPercent").textContent = pct + "%  ·  " + state.score + " / " + (state.questions.length * 10) + " points";
+      $("resultTitle").textContent = state.you + " & " + state.partner;
+      showView("result");
+      playOutcome(pct);
+    }
+
+    function playOutcome(pct) {
+      renderChars("resultChars");
+      const stage = $("resultStage");
+      const L = $("resBubbleL");
+      const R = $("resBubbleR");
+      L.classList.remove("show");
+      R.classList.remove("show");
+      $("kissBurst").style.opacity = "0";
+
+      let scene = "scene-talk";
+      let story = "";
+      let lines = [];
+
+      if (pct < 30) {
+        scene = "scene-talk";
+        story = "The silence is heavy. Love cannot live on leftover time.";
+        lines = [
+          { who: "L", text: state.you + ": I felt it. You were only passing time." },
+          { who: "R", text: state.partner + ": Then we should stop pretending." },
+          { who: "L", text: "Let's Breakup." }
+        ];
+        setTimeout(() => {
+          stage.className = "glass relative mt-6 overflow-hidden rounded-3xl pb-4 scene-slap";
+          setTimeout(() => {
+            stage.className = "glass relative mt-6 overflow-hidden rounded-3xl pb-4 scene-breakup";
+          }, 900);
+        }, 2400);
+      } else if (pct < 60) {
+        scene = "scene-talk";
+        story = "The bond frays. Two hearts step away before they fully break.";
+        lines = [
+          { who: "R", text: state.partner + ": This doesn’t feel like forever." },
+          { who: "L", text: state.you + ": Let's Breakup… before we hurt more." }
+        ];
+        setTimeout(() => {
+          stage.className = "glass relative mt-6 overflow-hidden rounded-3xl pb-4 scene-breakup";
+        }, 2600);
+      } else if (pct < 70) {
+        story = "There is still a spark — tender, unfinished, worth protecting.";
+        lines = [
+          { who: "L", text: state.you + ": We are not perfect, but I still want us." },
+          { who: "R", text: state.partner + ": Then let’s try again, gently." }
+        ];
+      } else if (pct < 80) {
+        story = "Warmth returns. Two people choosing each other in the middle of the mess.";
+        lines = [
+          { who: "R", text: state.partner + ": I see you. I choose you." },
+          { who: "L", text: state.you + ": Stay. We’ll write a kinder chapter." }
+        ];
+      } else if (pct < 90) {
+        story = "Devotion shows in the small, loyal things. You are held.";
+        lines = [
+          { who: "L", text: state.you + ": You are my calm and my courage." },
+          { who: "R", text: state.partner + ": And you are home." }
+        ];
+      } else if (pct < 100) {
+        scene = "scene-hug";
+        story = "They close the distance. A hug that says: I am not going anywhere.";
+        lines = [
+          { who: "L", text: state.you + ": Come here. I missed this." },
+          { who: "R", text: state.partner + ": Hold me. I’m yours." }
+        ];
+      } else {
+        scene = "scene-kiss";
+        story = "Doubt melts. What remains is a kiss that feels like a vow.";
+        lines = [
+          { who: "R", text: state.partner + ": Sorry for doubting you." },
+          { who: "L", text: state.you + ": I never stopped loving you." }
+        ];
+      }
+
+      stage.className = "glass relative mt-6 overflow-hidden rounded-3xl pb-4 " + scene;
+      $("resultStory").textContent = story;
+
+      let i = 0;
+      function nextLine() {
+        if (i >= lines.length) return;
+        const line = lines[i++];
+        const el = line.who === "L" ? L : R;
+        const other = line.who === "L" ? R : L;
+        other.classList.remove("show");
+        el.textContent = line.text;
+        el.classList.remove("show");
+        void el.offsetWidth;
+        el.classList.add("show");
+        setTimeout(nextLine, 2200);
+      }
+      setTimeout(nextLine, 350);
+    }
+
+    function builderCard(q, idx) {
+      const wrap = document.createElement("div");
+      wrap.className = "builder-card glass rounded-3xl p-4";
+      wrap.innerHTML = `
+        <div class="mb-2 flex items-center justify-between">
+          <span class="text-sm font-extrabold">Question ${idx + 1}</span>
+          <button type="button" class="text-xs text-rose-200 underline remove">Remove</button>
+        </div>
+        <input class="q mb-2 w-full rounded-xl bg-white/90 px-3 py-2 text-sm" placeholder="Your question" />
+        <input class="oa mb-2 w-full rounded-xl bg-white/90 px-3 py-2 text-sm" placeholder="Option A" />
+        <input class="ob mb-2 w-full rounded-xl bg-white/90 px-3 py-2 text-sm" placeholder="Option B" />
+        <label class="text-sm text-rose-100">Correct answer (10 points)
+          <select class="corr ml-2 rounded-lg bg-white/90 px-2 py-1 text-sm">
+            <option value="0">Option A</option>
+            <option value="1">Option B</option>
+          </select>
+        </label>
+      `;
+      if (q) {
+        wrap.querySelector(".q").value = q.q || "";
+        wrap.querySelector(".oa").value = q.a || "";
+        wrap.querySelector(".ob").value = q.b || "";
+        wrap.querySelector(".corr").value = String(q.correct ?? 0);
+      }
+      wrap.querySelector(".remove").onclick = () => {
+        wrap.remove();
+        [...$("builderList").children].forEach((c, i) => {
+          c.querySelector("span").textContent = "Question " + (i + 1);
+        });
+      };
+      return wrap;
+    }
+
+    function openBuilder() {
+      const list = $("builderList");
+      list.innerHTML = "";
+      const starter = [
+        { q: "Do you still get nervous when I smile at you?", a: "Every time", b: "Not really", correct: 0 },
+        { q: "When I am hurting, you would…", a: "Sit with me until it eases", b: "Tell me to get over it", correct: 0 }
+      ];
+      starter.forEach((q, i) => list.appendChild(builderCard(q, i)));
+      $("shareBox").classList.add("hidden");
+      showView("builder");
+    }
+
+    function collectBuilder() {
+      return [...$("builderList").children].map((card) => ({
+        q: card.querySelector(".q").value.trim(),
+        a: card.querySelector(".oa").value.trim(),
+        b: card.querySelector(".ob").value.trim(),
+        correct: Number(card.querySelector(".corr").value)
+      })).filter((q) => q.q && q.a && q.b);
+    }
+
+    function publishQuiz() {
+      const questions = collectBuilder();
+      if (questions.length < 1) {
+        alert("Add at least one complete question with two options.");
+        return;
+      }
+      const payload = { from: state.you || "Your lover", questions };
+      const url = location.origin + location.pathname + "#c=" + encodeQuiz(payload);
+      $("shareUrl").value = url;
+      $("shareBox").classList.remove("hidden");
+      $("copyDone").classList.add("hidden");
+    }
+
+    function copyLink() {
+      const text = $("shareUrl").value;
+      navigator.clipboard.writeText(text).then(() => {
+        $("copyDone").classList.remove("hidden");
+      }).catch(() => {
+        $("shareUrl").select();
+        document.execCommand("copy");
+        $("copyDone").classList.remove("hidden");
+      });
+    }
+
+    $("startBtn").onclick = startGame;
+    $("nextTalkBtn").onclick = startQuiz;
+    $("createBtn").onclick = openBuilder;
+    $("addQBtn").onclick = () => {
+      const list = $("builderList");
+      list.appendChild(builderCard(null, list.children.length));
+    };
+    $("publishBtn").onclick = publishQuiz;
+    $("copyLinkBtn").onclick = copyLink;
+    $("backResultBtn").onclick = () => showView("result");
+    $("replayBtn").onclick = () => {
+      state.index = 0;
+      state.score = 0;
+      showView("welcome");
+    };
+    document.querySelectorAll("#view-quiz .option").forEach((btn) => {
+      btn.onclick = () => choose(btn.dataset.choice);
+    });
+    ["yourName", "partnerName"].forEach((id) => {
+      $(id).addEventListener("keydown", (e) => {
+        if (e.key === "Enter") startGame();
+      });
+    });
+
+    spawnHearts();
+    loadSharedQuiz();
+    window.addEventListener("hashchange", loadSharedQuiz);
+  </script>
+</body>
+</html>
